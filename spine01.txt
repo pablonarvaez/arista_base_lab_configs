@@ -1,0 +1,79 @@
+spine01#show running-config
+! Command: show running-config
+! device: spine01 (vEOS, EOS-4.17.5M)
+!
+! boot system flash:/vEOS-lab.swi
+!
+transceiver qsfp default-mode 4x10G
+!
+logging vrf mgmt host 10.0.0.1
+!
+hostname spine01
+!
+spanning-tree mode mstp
+!
+no aaa root
+!
+username admin role network-admin secret sha512 xxxxxxxx
+!
+vrf definition mgmt
+   rd 0:65010
+!
+interface Ethernet1
+   description link_to_leaf01-eth4
+   no switchport
+   ip address 172.16.0.1/30
+!
+interface Ethernet2
+   description link_to_leaf02-eth4
+   no switchport
+   ip address 172.16.0.5/30
+!
+interface Ethernet3
+   description link_to_leaf03-eth4
+   no switchport
+   ip address 172.16.0.9/30
+!
+interface Ethernet4
+   description link_to_frr01-ens4
+   no switchport
+   ip address 172.16.0.26/30
+!
+interface Ethernet5
+   description link_to_frr02-ens4
+   no switchport
+   ip address 172.16.0.34/30
+!
+interface Loopback0
+   description router-id
+   ip address 10.0.1.11/32
+!
+interface Management1
+   description oob-mgmt
+   vrf forwarding mgmt
+   ip address 10.0.0.31/24
+!
+ip routing
+no ip routing vrf mgmt
+!
+router bgp 65020
+   router-id 10.0.1.11
+   distance bgp 20 200 200
+   maximum-paths 2 ecmp 64
+   neighbor ebgp-to-frr-peers peer-group
+   neighbor ebgp-to-frr-peers remote-as 65000
+   neighbor ebgp-to-frr-peers maximum-routes 12000
+   neighbor 172.16.0.2 remote-as 65021
+   neighbor 172.16.0.2 maximum-routes 12000
+   neighbor 172.16.0.6 remote-as 65021
+   neighbor 172.16.0.6 maximum-routes 12000
+   neighbor 172.16.0.10 remote-as 65022
+   neighbor 172.16.0.10 maximum-routes 12000
+   neighbor 172.16.0.25 peer-group ebgp-to-frr-peers
+   neighbor 172.16.0.33 peer-group ebgp-to-frr-peers
+   network 10.0.1.11/32
+   redistribute connected
+!
+!
+end
+spine01#
