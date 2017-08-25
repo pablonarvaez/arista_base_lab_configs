@@ -1,0 +1,108 @@
+leaf02#show running-config
+! Command: show running-config
+! device: leaf02 (vEOS, EOS-4.17.5M)
+!
+! boot system flash:/vEOS-lab.swi
+!
+transceiver qsfp default-mode 4x10G
+!
+logging vrf mgmt host 10.0.0.1
+!
+hostname leaf02
+!
+spanning-tree mode mstp
+!
+no aaa root
+!
+username admin role network-admin secret xxxxxx
+!
+vlan 11
+   name servce01
+!
+vlan 4094
+   name mlag-vlan
+!
+vrf definition mgmt
+   rd 0:65010
+!
+interface Port-Channel54
+   description mlag-portchannel
+   switchport trunk allowed vlan 11,4094
+   switchport mode trunk
+!
+interface Ethernet1
+   description server01-ens2
+   shutdown
+!
+interface Ethernet2
+   shutdown
+!
+interface Ethernet3
+   shutdown
+!
+interface Ethernet4
+   description link_to_spine01-e2
+   no switchport
+   ip address 172.16.0.6/30
+!
+interface Ethernet5
+   description link_to_spine02-eth2
+   no switchport
+   ip address 172.16.0.18/30
+!
+interface Ethernet6
+   description link_to_leaf01-eth6 (mlag-peerlink1)
+   channel-group 54 mode on
+!
+interface Ethernet7
+   description link_to_leaf01-eth7 (mlag-peerlink2)
+   channel-group 54 mode on
+!
+interface Loopback0
+   description router-id
+   ip address 10.0.1.22/32
+!
+interface Management1
+   vrf forwarding mgmt
+   ip address 10.0.0.22/24
+!
+interface Vlan11
+   description service01-gateway
+   ip address 192.168.11.3/24
+   ip virtual-router address 192.168.11.1
+!
+interface Vlan4094
+   description mlag-peer
+   ip address 172.16.254.2/30
+!
+interface Vxlan1
+   vxlan udp-port 4789
+!
+ip virtual-router mac-address 00:1c:aa:aa:aa:aa
+!
+ip routing
+no ip routing vrf mgmt
+!
+ip prefix-list filter-out-to-spine seq 10 deny 192.168.11.0/24
+ip prefix-list filter-out-to-spine seq 20 deny 192.168.12.0/24
+ip prefix-list filter-out-to-spine seq 30 permit 0.0.0.0/0 le 32
+!
+router bgp 65021
+   router-id 10.0.1.22
+   distance bgp 20 200 200
+   maximum-paths 2 ecmp 2
+   neighbor ebgp-to-spine-peers peer-group
+   neighbor ebgp-to-spine-peers remote-as 65020
+   neighbor ebgp-to-spine-peers prefix-list filter-out-to-spine out
+   neighbor ebgp-to-spine-peers maximum-routes 12000
+   neighbor 172.16.0.5 peer-group ebgp-to-spine-peers
+   neighbor 172.16.0.17 peer-group ebgp-to-spine-peers
+   neighbor 172.16.254.1 remote-as 65021
+   neighbor 172.16.254.1 next-hop-self
+   neighbor 172.16.254.1 maximum-routes 12000
+   network 10.0.1.22/32
+   redistribute connected
+!
+!
+end
+leaf02#
